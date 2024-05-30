@@ -11,7 +11,7 @@ pub trait AssetPairsTrait {  type AssetPairs; }
 pub trait LiquidityPoolTrait {  type LiquidityPool; }
 pub trait AccountLiquidityPoolTrait {  type AccountLiquidityPool; }
 
-pub trait DexCaller {
+pub trait HumidefiCaller {
 	type AccountId: Parameter + Member + MaybeSerializeDeserialize + Debug + Ord + MaxEncodedLen;
 	type AssetId: FullCodec + Clone + Eq + PartialEq + Debug + scale_info::TypeInfo + MaxEncodedLen;
 	type AssetBalance: FullCodec + Copy + Default + Debug + scale_info::TypeInfo + MaxEncodedLen;
@@ -54,7 +54,7 @@ pub trait DexCaller {
 	) -> Result<(), DispatchError>;
 }
 
-pub trait DexHelpers {
+pub trait HumidefiHelpers {
 	type AccountId: Parameter + Member + MaybeSerializeDeserialize + Debug + Ord + MaxEncodedLen;
 	type AssetId: FullCodec + Clone + Eq + PartialEq + Debug + scale_info::TypeInfo + MaxEncodedLen;
 	type AssetBalance: FullCodec + Copy + Default + Debug + scale_info::TypeInfo + MaxEncodedLen;

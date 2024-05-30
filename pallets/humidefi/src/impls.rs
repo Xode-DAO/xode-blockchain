@@ -15,13 +15,8 @@ use frame_support::{
 };
 use super::*;
 
-use humidefi_interface::{
-	AssetPairsTrait,
-	LiquidityPoolTrait,
-	AccountLiquidityPoolTrait
-};
-use humidefi_interface::DexCaller;
-use humidefi_interface::DexHelpers;
+use interfaces::humidefi::{ AssetPairsTrait, LiquidityPoolTrait, AccountLiquidityPoolTrait };
+use interfaces::humidefi::{ HumidefiCaller, HumidefiHelpers };
 
 const HUMIDEFI: PalletId = PalletId(*b"HUMIDEFI");
 
@@ -29,7 +24,7 @@ impl<T: Config> AssetPairsTrait for AssetPairs<T> { type AssetPairs = Self; }
 impl<T: Config> LiquidityPoolTrait for LiquidityPool<T> { type LiquidityPool = Self; }
 impl<T: Config> AccountLiquidityPoolTrait for AccountLiquidityPool<T> { type AccountLiquidityPool = Self; }
 
-impl<T: Config> DexCaller for Pallet<T> {
+impl<T: Config> HumidefiCaller for Pallet<T> {
 	type AccountId = T::AccountId;
 	type AssetId = <T::Fungibles as fungibles::Inspect<Self::AccountId>>::AssetId;
 	type AssetBalance = <T::Fungibles as fungibles::Inspect<Self::AccountId>>::Balance;
@@ -42,15 +37,15 @@ impl<T: Config> DexCaller for Pallet<T> {
 		asset_x_balance:  Self::AssetBalance,
 		asset_y_balance:  Self::AssetBalance,
 	) -> Result<(), DispatchError> {
-		let dex_account_id = <Pallet<T> as DexHelpers>::get_dex_account();
+		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
 			who.clone(),
 			asset_pair.clone().asset_x,
 			asset_x_balance,
 		).expect(Error::<T>::CheckAssetXBalanceError.into());
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
 			who.clone(),
 			asset_pair.clone().asset_y,
 			asset_x_balance,
@@ -59,7 +54,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_x,
 			&who.clone(),
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			asset_x_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
@@ -67,12 +62,12 @@ impl<T: Config> DexCaller for Pallet<T> {
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_y,
 			&who.clone(),
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			asset_y_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
-		let mint_liquidity = <Pallet<T> as DexHelpers>::compute_and_mint_lp_token(
+		let mint_liquidity = <Pallet<T> as HumidefiHelpers>::compute_and_mint_lp_token(
 			asset_pair.clone(),
 			asset_x_balance,
 			asset_y_balance,
@@ -81,21 +76,21 @@ impl<T: Config> DexCaller for Pallet<T> {
 		let lp_token: Self::AssetId = mint_liquidity.0;
 		let lp_token_balance = mint_liquidity.1;
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
-			dex_account_id.clone(),
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+			humidefi_account_id.clone(),
 			lp_token,
 			lp_token_balance,
 		).expect(Error::<T>::CheckAssetLiquidityPoolTokenBalanceError.into());
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			lp_token.clone(),
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			&who.clone(),
 			lp_token_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
-		let get_liquidity_pool = <Pallet<T> as DexHelpers>::get_liquidity_pool(asset_pair.clone());
+		let get_liquidity_pool = <Pallet<T> as HumidefiHelpers>::get_liquidity_pool(asset_pair.clone());
 		match get_liquidity_pool {
 			Some(liquidity_pool) => {
 				let update_asset_x_balance = liquidity_pool
@@ -106,7 +101,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 					.asset_y_balance
 					.add(FixedU128::from_inner(asset_y_balance));
 
-				let update_price = <Pallet<T> as DexHelpers>::compute_price(
+				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
 				).expect(Error::<T>::ComputePriceError.into());
@@ -131,7 +126,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 				});
 			},
 			None => {
-				let new_price = <Pallet<T> as DexHelpers>::compute_price(
+				let new_price = <Pallet<T> as HumidefiHelpers>::compute_price(
 					asset_x_balance,
 					asset_y_balance
 				).expect(Error::<T>::ComputePriceError.into());
@@ -161,7 +156,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 			lp_token_balance: FixedU128::from_inner(lp_token_balance),
 		};
 
-		let get_account_liquidity_pools = <Pallet<T> as DexHelpers>::get_account_liquidity_pools(who.clone(), asset_pair.clone());
+		let get_account_liquidity_pools = <Pallet<T> as HumidefiHelpers>::get_account_liquidity_pools(who.clone(), asset_pair.clone());
 		match get_account_liquidity_pools {
 			Some(account_liquidity_pools) => {
 				let mut last_id = 0u64.into();
@@ -210,12 +205,12 @@ impl<T: Config> DexCaller for Pallet<T> {
 		lp_token: Self::AssetId,
 		id: Self::AccountLiquidityPoolId,
 	) -> Result<(), DispatchError> {
-		let get_liquidity_pool = <Pallet<T> as DexHelpers>::get_liquidity_pool(asset_pair.clone());
+		let get_liquidity_pool = <Pallet<T> as HumidefiHelpers>::get_liquidity_pool(asset_pair.clone());
 		if !get_liquidity_pool.is_some() {
 			return Err(Error::<T>::LiquidityPoolDoesNotExists.into())
 		}
 
-		let asset_xy_balances = <Pallet<T> as DexHelpers>::compute_xy_assets(
+		let asset_xy_balances = <Pallet<T> as HumidefiHelpers>::compute_xy_assets(
 			who.clone(),
 			asset_pair.clone(),
 			lp_token,
@@ -226,23 +221,23 @@ impl<T: Config> DexCaller for Pallet<T> {
 		let asset_y_balance = asset_xy_balances.1;
 		let lp_token_balance = asset_xy_balances.2;
 
-		let dex_account_id = <Pallet<T> as DexHelpers>::get_dex_account();
+		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
-			dex_account_id.clone(),
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+			humidefi_account_id.clone(),
 			asset_pair.clone().asset_x,
 			asset_x_balance,
 		).expect(Error::<T>::CheckAssetXBalanceError.into());
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
-			dex_account_id.clone(),
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+			humidefi_account_id.clone(),
 			asset_pair.clone().asset_x,
 			asset_y_balance,
 		).expect(Error::<T>::CheckAssetYBalanceError.into());
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_x,
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			&who.clone(),
 			asset_x_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
@@ -250,7 +245,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_y,
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			&who.clone(),
 			asset_y_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
@@ -266,7 +261,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 					.asset_y_balance
 					.sub(FixedU128::from_inner(asset_y_balance));
 
-				let update_price = <Pallet<T> as DexHelpers>::compute_price(
+				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
 				).expect(Error::<T>::ComputePriceError.into());
@@ -301,9 +296,9 @@ impl<T: Config> DexCaller for Pallet<T> {
 		asset_exact_in_balance: Self::AssetBalance,
 		asset_max_out: Self::AssetId,
 	) -> Result<(), DispatchError> {
-		let dex_account_id = <Pallet<T> as DexHelpers>::get_dex_account();
+		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
 			who.clone(),
 			asset_exact_in,
 			asset_exact_in_balance,
@@ -312,26 +307,26 @@ impl<T: Config> DexCaller for Pallet<T> {
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_exact_in,
 			&who.clone(),
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			asset_exact_in_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
 		let asset_pair = AssetPairs::<T> { asset_x: asset_exact_in, asset_y: asset_max_out };
-		let get_liquidity_pool = <Pallet<T> as DexHelpers>::get_liquidity_pool(asset_pair.clone());
+		let get_liquidity_pool = <Pallet<T> as HumidefiHelpers>::get_liquidity_pool(asset_pair.clone());
 		match get_liquidity_pool {
 			Some(liquidity_pool) => {
 				let mut price = FixedU128::from_inner(0);
 
 				if asset_exact_in == liquidity_pool.asset_pair.asset_x {
-					price = <Pallet<T> as DexHelpers>::compute_price(
+					price = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_x_balance.into_inner(),
 						liquidity_pool.asset_y_balance.into_inner()
 					).expect(Error::<T>::ComputePriceError.into());
 				}
 
 				if asset_exact_in == liquidity_pool.asset_pair.asset_y {
-					price = <Pallet<T> as DexHelpers>::compute_price(
+					price = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_y_balance.into_inner(),
 						liquidity_pool.asset_x_balance.into_inner()
 					).expect(Error::<T>::ComputePriceError.into());
@@ -339,15 +334,15 @@ impl<T: Config> DexCaller for Pallet<T> {
 
 				let asset_max_out_balance = FixedU128::from_inner(price.into_inner()).mul(FixedU128::from_inner(asset_exact_in_balance));
 
-				<Pallet<T> as DexHelpers>::check_asset_balance(
-					dex_account_id.clone(),
+				<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+					humidefi_account_id.clone(),
 					asset_max_out,
 					asset_max_out_balance.into_inner(),
 				).expect(Error::<T>::CheckAssetSwapOutBalanceError.into());
 
 				<T::Fungibles as fungibles::Mutate<_>>::transfer(
 					asset_max_out,
-					&dex_account_id.clone(),
+					&humidefi_account_id.clone(),
 					&who.clone(),
 					asset_max_out_balance.into_inner(),
 					frame_support::traits::tokens::Preservation::Expendable,
@@ -376,7 +371,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 						.add(FixedU128::from_inner(asset_exact_in_balance));
 				}
 
-				let update_price = <Pallet<T> as DexHelpers>::compute_price(
+				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
 				).expect(Error::<T>::ComputePriceError.into());
@@ -410,37 +405,37 @@ impl<T: Config> DexCaller for Pallet<T> {
 		asset_exact_out_balance: Self::AssetBalance,
 		asset_min_in: Self::AssetId,
 	) -> Result<(), DispatchError> {
-		let dex_account_id = <Pallet<T> as DexHelpers>::get_dex_account();
+		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as DexHelpers>::check_asset_balance(
-			dex_account_id.clone(),
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+			humidefi_account_id.clone(),
 			asset_exact_out,
 			asset_exact_out_balance,
 		).expect(Error::<T>::CheckAssetSwapOutBalanceError.into());
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_exact_out,
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			&who.clone(),
 			asset_exact_out_balance,
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
 		let asset_pair = AssetPairs::<T> { asset_x: asset_min_in, asset_y: asset_exact_out };
-		let get_liquidity_pool = <Pallet<T> as DexHelpers>::get_liquidity_pool(asset_pair.clone());
+		let get_liquidity_pool = <Pallet<T> as HumidefiHelpers>::get_liquidity_pool(asset_pair.clone());
 		match get_liquidity_pool {
 			Some(liquidity_pool) => {
 				let mut price = FixedU128::from_inner(0);
 
 				if asset_min_in == liquidity_pool.asset_pair.asset_x {
-					price = <Pallet<T> as DexHelpers>::compute_price(
+					price = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_x_balance.into_inner(),
 						liquidity_pool.asset_y_balance.into_inner()
 					).expect(Error::<T>::ComputePriceError.into());
 				}
 
 				if asset_min_in == liquidity_pool.asset_pair.asset_y {
-					price = <Pallet<T> as DexHelpers>::compute_price(
+					price = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_y_balance.into_inner(),
 						liquidity_pool.asset_x_balance.into_inner()
 					).expect(Error::<T>::ComputePriceError.into());
@@ -448,7 +443,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 
 				let asset_min_in_balance = FixedU128::from_inner(price.into_inner()).mul(FixedU128::from_inner(asset_exact_out_balance));
 
-				<Pallet<T> as DexHelpers>::check_asset_balance(
+				<Pallet<T> as HumidefiHelpers>::check_asset_balance(
 					who.clone(),
 					asset_min_in,
 					asset_min_in_balance.into_inner(),
@@ -457,7 +452,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 				<T::Fungibles as fungibles::Mutate<_>>::transfer(
 					asset_min_in,
 					&who.clone(),
-					&dex_account_id.clone(),
+					&humidefi_account_id.clone(),
 					asset_min_in_balance.into_inner(),
 					frame_support::traits::tokens::Preservation::Expendable,
 				)?;
@@ -485,7 +480,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 						.add(asset_min_in_balance);
 				}
 
-				let update_price = <Pallet<T> as DexHelpers>::compute_price(
+				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
 				).expect(Error::<T>::ComputePriceError.into());
@@ -519,7 +514,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 		asset_balance: Self::AssetBalance,
 		account_id: Self::AccountId,
 	) -> Result<(), DispatchError> {
-		<Pallet<T> as DexHelpers>::check_asset_balance(
+		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
 			who.clone(),
 			asset,
 			asset_balance,
@@ -537,7 +532,7 @@ impl<T: Config> DexCaller for Pallet<T> {
 	}
 }
 
-impl<T: Config> DexHelpers for Pallet<T> {
+impl<T: Config> HumidefiHelpers for Pallet<T> {
 	type AccountId = T::AccountId;
 	type AssetId = <T::Fungibles as fungibles::Inspect<Self::AccountId>>::AssetId;
 	type AssetBalance = <T::Fungibles as fungibles::Inspect<Self::AccountId>>::Balance;
@@ -627,7 +622,7 @@ impl<T: Config> DexHelpers for Pallet<T> {
 		asset_y_balance: Self::AssetBalance,
 	) -> Result<(AssetIdOf<T>, AssetBalanceOf<T>), DispatchError> {
 		let mut lp_token: AssetIdOf<T> = 1u32.into();
-		let dex_account_id = Self::get_dex_account();
+		let humidefi_account_id = Self::get_dex_account();
 
 		let existing_liquidity_pool = Self::get_liquidity_pool(asset_pair.clone());
 
@@ -644,7 +639,7 @@ impl<T: Config> DexHelpers for Pallet<T> {
 					if !<T::Fungibles as fungibles::Inspect<_>>::asset_exists(lp_token) {
 						<T::Fungibles as fungibles::Create<_>>::create(
 							lp_token,
-							dex_account_id.clone(),
+							humidefi_account_id.clone(),
 							true,
 							1u128.into(),
 						)?;
@@ -666,7 +661,7 @@ impl<T: Config> DexHelpers for Pallet<T> {
 
 		<T::Fungibles as fungibles::Mutate<_>>::mint_into(
 			lp_token,
-			&dex_account_id.clone(),
+			&humidefi_account_id.clone(),
 			lp_token_balance,
 		)?;
 

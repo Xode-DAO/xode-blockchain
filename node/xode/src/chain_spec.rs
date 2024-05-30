@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use humidefi_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, DexModule};
+use humidefi_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, HumidefiModule};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -88,7 +88,7 @@ pub fn development_config() -> ChainSpec {
 					),
 				],
 				vec![
-					DexModule::get_dex_account(),
+					HumidefiModule::get_dex_account(),
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),

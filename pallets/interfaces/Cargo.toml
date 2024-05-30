@@ -1,7 +1,7 @@
 [package]
-name = "humidefi-interface"
+name = "interfaces"
 authors = ["Anonymous"]
-description = "HUMIDEFI Interface"
+description = "Interfaces"
 version = "0.1.0"
 license = "Unlicense"
 edition = "2021"

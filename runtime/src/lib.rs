@@ -44,7 +44,7 @@ use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{RelayLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
-pub use pallet_dex::AssetBalanceOf;
+pub use pallet_humidefi::AssetBalanceOf;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -62,7 +62,7 @@ use xcm_executor::XcmExecutor;
 pub use pallet_parachain_template;
 
 /// Local pallets
-pub use pallet_dex;
+pub use pallet_humidefi;
 
 pub use pallet_balances::Call as BalancesCall;
 
@@ -486,7 +486,7 @@ impl pallet_parachain_template::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 }
 
-impl pallet_dex::Config for Runtime {
+impl pallet_humidefi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type NativeBalance = Balances;
 	type Fungibles = Assets;
@@ -644,7 +644,7 @@ construct_runtime!(
 		Sudo: pallet_sudo = 65,
 
 		// Local Pallets
-		DexModule: pallet_dex = 70,
+		HumidefiModule: pallet_humidefi = 70,
 
 		// Extended Pallets
 		Utility: pallet_utility = 72,
