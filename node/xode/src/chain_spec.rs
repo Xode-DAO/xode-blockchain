@@ -1,5 +1,8 @@
 use cumulus_primitives_core::ParaId;
-use humidefi_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, HumidefiModule};
+use humidefi_runtime::{
+	AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, HumidefiModule,
+	DemocracyConfig, CouncilConfig, TechnicalCommitteeConfig
+};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -186,6 +189,8 @@ fn testnet_genesis(
 	root: AccountId,
 	id: ParaId,
 ) -> humidefi_runtime::GenesisConfig {
+	let num_endowed_accounts = endowed_accounts.len();
+
 	humidefi_runtime::GenesisConfig {
 		system: humidefi_runtime::SystemConfig {
 			code: humidefi_runtime::WASM_BINARY
@@ -223,6 +228,16 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		assets: Default::default(),
-		sudo: humidefi_runtime::SudoConfig { key: Some(root) },
+		democracy: DemocracyConfig::default(),
+		council: CouncilConfig::default(),
+		technical_committee: TechnicalCommitteeConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect(),
+			phantom: Default::default(),
+		},
+		treasury: Default::default(),
 	}
 }
