@@ -22,7 +22,6 @@ scale-info = { version = "2.7.0", default-features = false, features = ["derive"
 smallvec = "1.10.0"
 
 # Local
-pallet-parachain-template = { path = "../pallets/template", default-features = false }
 pallet-humidefi = { path = "../pallets/humidefi", default-features = false }
 
 # Substrate
@@ -109,7 +108,6 @@ std = [
 	"pallet-collator-selection/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
-	"pallet-parachain-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -148,7 +146,6 @@ runtime-benchmarks = [
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-	"pallet-parachain-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
@@ -173,7 +170,6 @@ try-runtime = [
 	"pallet-collator-selection/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
-	"pallet-parachain-template/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",

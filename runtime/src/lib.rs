@@ -58,9 +58,6 @@ use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 use xcm::latest::prelude::BodyId;
 use xcm_executor::XcmExecutor;
 
-/// Import the template pallet.
-pub use pallet_parachain_template;
-
 /// Local pallets
 pub use pallet_humidefi;
 
@@ -481,11 +478,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
-/// Configure the pallet template in pallets/template.
-impl pallet_parachain_template::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-}
-
 impl pallet_humidefi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type NativeBalance = Balances;
@@ -630,9 +622,6 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm = 32,
 		DmpQueue: cumulus_pallet_dmp_queue = 33,
-
-		// Template
-		TemplatePallet: pallet_parachain_template = 40,
 
 		// Assets
 		Assets: pallet_assets = 50,
