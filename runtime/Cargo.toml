@@ -72,13 +72,11 @@ cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus.git"
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.43", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.43", default-features = false }
 
-# Contracts specific packages
+# Chain extensions
+pallet-insecure-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", package = "pallet-insecure-randomness-collective-flip", default-features = false, branch = "polkadot-v0.9.43" }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", package = "pallet-contracts", default-features = false, branch = "polkadot-v0.9.43" }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", package = "pallet-contracts-primitives", default-features = false, branch = "polkadot-v0.9.43" }
-
-# Chain extension
 pallet-assets = { git = "https://github.com/paritytech/substrate", package = "pallet-assets", default-features = false, branch = "polkadot-v0.9.43" }
-pallet-assets-chain-extension = { git = "https://github.com/727-Ventures/pallet-assets-chain-extension", default-features = false, features = ["substrate"], branch = "polkadot-v0.9.43"  }
 pallet-utility = { git = "https://github.com/paritytech/substrate", package = "pallet-utility", default-features = false, branch = "polkadot-v0.9.43" }
 pallet-collective = { git = "https://github.com/paritytech/substrate", package = "pallet-collective", default-features = false, branch = "polkadot-v0.9.43" }
 pallet-child-bounties = { git = "https://github.com/paritytech/substrate", package = "pallet-child-bounties", default-features = false, branch = "polkadot-v0.9.43" }
@@ -134,10 +132,10 @@ std = [
 	"xcm-builder/std",
 	"xcm-executor/std",
 	"xcm/std",
-	"pallet-contracts/std",
+	"pallet-insecure-randomness-collective-flip/std",
 	"pallet-contracts-primitives/std",
+	"pallet-contracts/std",
 	"pallet-assets/std",
-	"pallet-assets-chain-extension/substrate-std",
 	"substrate-wasm-builder",
 	"pallet-utility/std",
 	"pallet-collective/std",
@@ -164,6 +162,8 @@ runtime-benchmarks = [
 	"xcm-builder/runtime-benchmarks",
 	"cumulus-pallet-session-benchmarking/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"pallet-contracts/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
 	"pallet-child-bounties/runtime-benchmarks",
 	"pallet-bounties/runtime-benchmarks",
@@ -192,6 +192,9 @@ try-runtime = [
 	"pallet-transaction-payment/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
+	"pallet-contracts/try-runtime",
+	"pallet-assets/try-runtime",
 	"pallet-collective/try-runtime",
 	"pallet-child-bounties/try-runtime",
 	"pallet-bounties/try-runtime",
