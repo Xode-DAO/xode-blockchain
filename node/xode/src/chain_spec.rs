@@ -1,7 +1,7 @@
 use cumulus_primitives_core::ParaId;
 use humidefi_runtime::{
-	AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, HumidefiModule,
-	DemocracyConfig, CouncilConfig, TechnicalCommitteeConfig
+	AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT,
+	HumidefiModule, DemocracyConfig, CouncilConfig, TechnicalCommitteeConfig
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -11,7 +11,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
-	sc_service::GenericChainSpec<humidefi_runtime::GenesisConfig, Extensions>;
+	sc_service::GenericChainSpec<humidefi_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -67,7 +67,7 @@ pub fn template_session_keys(keys: AuraId) -> humidefi_runtime::SessionKeys {
 pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "XON".into());
+	properties.insert("tokenSymbol".into(), "UNIT".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
@@ -124,13 +124,13 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "XON".into());
+	properties.insert("tokenSymbol".into(), "UNIT".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
 	ChainSpec::from_genesis(
 		// Name
-		"Xode Testnet",
+		"Local Testnet",
 		// ID
 		"local_testnet",
 		ChainType::Local,
@@ -188,19 +188,23 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	root: AccountId,
 	id: ParaId,
-) -> humidefi_runtime::GenesisConfig {
+) -> humidefi_runtime::RuntimeGenesisConfig {
 	let num_endowed_accounts = endowed_accounts.len();
 
-	humidefi_runtime::GenesisConfig {
+	humidefi_runtime::RuntimeGenesisConfig {
 		system: humidefi_runtime::SystemConfig {
 			code: humidefi_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: humidefi_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: humidefi_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: humidefi_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: humidefi_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
@@ -225,6 +229,7 @@ fn testnet_genesis(
 		parachain_system: Default::default(),
 		polkadot_xcm: humidefi_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(SAFE_XCM_VERSION),
+			..Default::default()
 		},
 		transaction_payment: Default::default(),
 		assets: Default::default(),
