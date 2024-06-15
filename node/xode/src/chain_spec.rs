@@ -1,13 +1,17 @@
+use std::str::FromStr;
+
 use cumulus_primitives_core::ParaId;
 use humidefi_runtime::{
 	AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT,
 	HumidefiModule, DemocracyConfig, CouncilConfig, TechnicalCommitteeConfig
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_network::config::MultiaddrWithPeerId;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::crypto::Ss58Codec;
+use sp_runtime::{traits::{IdentifyAccount, Verify}, AccountId32};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -64,10 +68,10 @@ pub fn template_session_keys(keys: AuraId) -> humidefi_runtime::SessionKeys {
 	humidefi_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config() -> ChainSpec {
+pub fn xode_dev_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "XON".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
@@ -78,7 +82,7 @@ pub fn development_config() -> ChainSpec {
 		"dev",
 		ChainType::Development,
 		move || {
-			testnet_genesis(
+			xode_genesis(
 				// initial collators.
 				vec![
 					(
@@ -121,10 +125,10 @@ pub fn development_config() -> ChainSpec {
 	)
 }
 
-pub fn local_testnet_config() -> ChainSpec {
+pub fn xode_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "XON".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
@@ -135,7 +139,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		"local_testnet",
 		ChainType::Local,
 		move || {
-			testnet_genesis(
+			xode_genesis(
 				// initial collators.
 				vec![
 					(
@@ -183,7 +187,59 @@ pub fn local_testnet_config() -> ChainSpec {
 	)
 }
 
-fn testnet_genesis(
+pub fn xode_mainnet_config() -> ChainSpec {
+	// Base currency a unit name and decimal places
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "XON".into());
+	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("ss58Format".into(), 42.into());
+
+	ChainSpec::from_genesis(
+		// Name
+		"Xode",
+		// ID
+		"xode",
+		ChainType::Live,
+		move || {
+			xode_genesis(
+				// initial collators.
+				vec![
+					(
+						AccountId32::from_ss58check("5DkUonxnSyCUg518o5QR7yCkmEwCXJAQ9cEeM86UWgwZBaDu").expect("Invalid account ID"),
+						sr25519::Public::from_ss58check("5DkUonxnSyCUg518o5QR7yCkmEwCXJAQ9cEeM86UWgwZBaDu").expect("Invalid account ID").into(),
+					),
+					(
+						AccountId32::from_ss58check("5HieCkdopd7MvVbEnryGDQxwEK69h16kEFpQy9FPEew9Q5Kr").expect("Invalid account ID"),
+						sr25519::Public::from_ss58check("5HieCkdopd7MvVbEnryGDQxwEK69h16kEFpQy9FPEew9Q5Kr").expect("Invalid account ID").into(),
+					),
+				],
+				Vec::new(),
+				AccountId32::from_ss58check("5Dqs2Bid5UuWefFQautKxX2jAYfAgrzAPbwTKU6u5z4MeDB2").expect("Invalid account ID"),
+				3344.into(),
+			)
+		},
+		// Bootnodes
+		vec![
+			MultiaddrWithPeerId::from_str("/dns4/bootnodeA01.xode.net/tcp/30343/p2p/12D3KooWCMKos1ijGQPbPVSiNWyhu1BCzLsPQKZyLAvXaNzGwi2Z").expect("bootnode not found".into()),
+			MultiaddrWithPeerId::from_str("/dns4/bootnodeA02.xode.net/tcp/30343/p2p/12D3KooWH3aD7xZJgqTgqVGAMwWnWm7RGfuinQfsGf4CDiTsV8No").expect("bootnode not found".into())
+		],
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("xode"),
+		// Fork ID
+		None,
+		// Properties
+		Some(properties),
+		// Extensions
+		Extensions {
+			relay_chain: "kusama".into(), // You MUST set this to the correct network!
+			para_id: 3344,
+		},
+	)
+}
+
+fn xode_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	root: AccountId,
