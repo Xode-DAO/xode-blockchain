@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use humidefi_runtime::{opaque::Block, AccountId, Balance, Index as Nonce};
+use humidefi_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -54,6 +54,5 @@ where
 
 	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client).into_rpc())?;
-
 	Ok(module)
 }
