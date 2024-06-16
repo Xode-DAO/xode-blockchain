@@ -11,4 +11,4 @@ https://github.com/paritytech/zombienet/releases
 2. Run chmod +x all binaries and script
 3. Run cargo build --release at the root
 4. Run ./zombienet-launch.sh
-5. Open the appropriate link in polkadotJS based
+5. Open the appropriate link in polkadotJS
