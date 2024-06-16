@@ -1,9 +1,9 @@
-# Zombeinet Configuration
+# Zombienet Configuration
 
 ## Polkadot binaries
 https://github.com/paritytech/polkadot/releases
 
-## Zombeinet binaries
+## Zombienet binaries
 https://github.com/paritytech/zombienet/releases
 
 # Steps
