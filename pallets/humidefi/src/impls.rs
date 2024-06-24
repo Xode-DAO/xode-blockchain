@@ -4,13 +4,13 @@ use frame_support::{
         BoundedVec,
 		traits::{
 			AccountIdConversion,
-			EnsureAdd, EnsureSub, EnsureDiv, EnsureMul,
+			EnsureAdd, EnsureSub,
 			Zero,
 			ConstU32
 		},
-		FixedU128, Perbill,
+		FixedU128,
 	},
-	traits::{fungible, fungibles},
+	traits::{fungibles},
 	PalletId,
 };
 use super::*;
@@ -83,7 +83,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 		).expect(Error::<T>::CheckAssetLiquidityPoolTokenBalanceError.into());
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
-			lp_token.clone(),
+			lp_token,
 			&humidefi_account_id.clone(),
 			&who.clone(),
 			lp_token_balance,
@@ -147,7 +147,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 		}
 
 		let mut account_liquidity_pool_payload = AccountLiquidityPool::<T> {
-			id: 1u64.into(),
+			id: 1u64,
 			account_id: who.clone(),
 			asset_pair: asset_pair.clone(),
 			asset_x_balance: FixedU128::from_inner(asset_x_balance),
@@ -159,7 +159,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 		let get_account_liquidity_pools = <Pallet<T> as HumidefiHelpers>::get_account_liquidity_pools(who.clone(), asset_pair.clone());
 		match get_account_liquidity_pools {
 			Some(account_liquidity_pools) => {
-				let mut last_id = 0u64.into();
+				let mut last_id = 0u64;
 				if let Some(account_liquidity_pool) = account_liquidity_pools.last() {
 					last_id = account_liquidity_pool.id;
 				}
@@ -174,7 +174,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 					.expect(Error::<T>::AccountLiquidityPoolBoundedVecError.into());
 
 				let storage_key = (who.clone(), asset_pair.clone());
-				AccountLiquidityPoolStorage::<T>::mutate(storage_key, |mut query| {
+				AccountLiquidityPoolStorage::<T>::mutate(storage_key, |query| {
 					let update_account_liquidity_pools = mutate_account_liquidity_pools.clone();
 					*query = Some(update_account_liquidity_pools)
 				});
@@ -206,7 +206,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 		id: Self::AccountLiquidityPoolId,
 	) -> Result<(), DispatchError> {
 		let get_liquidity_pool = <Pallet<T> as HumidefiHelpers>::get_liquidity_pool(asset_pair.clone());
-		if !get_liquidity_pool.is_some() {
+		if get_liquidity_pool.is_none() {
 			return Err(Error::<T>::LiquidityPoolDoesNotExists.into())
 		}
 
@@ -251,7 +251,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
-		LiquidityPoolStorage::<T>::mutate(asset_pair.clone(), |mut query| {
+		LiquidityPoolStorage::<T>::mutate(asset_pair.clone(), |query| {
 			if let Some(mutate_liquidity_pool) = query {
 				let update_asset_x_balance = mutate_liquidity_pool
 					.asset_x_balance
@@ -549,8 +549,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 		asset: Self::AssetId,
 		account_id: Self::AccountId,
 	) -> Self::AssetBalance {
-		let balance = <T::Fungibles as fungibles::Inspect<_>>::balance(asset, &account_id);
-		balance
+		<T::Fungibles as fungibles::Inspect<_>>::balance(asset, &account_id)
 	}
 
 	fn get_liquidity_pool(
@@ -558,7 +557,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 	) -> Option<LiquidityPool<T>> {
 		let existing_liquidity_pool = LiquidityPoolStorage::<T>::get(asset_pair.clone());
 		match existing_liquidity_pool {
-			Some(liquidity_pool) => return Some(liquidity_pool),
+			Some(liquidity_pool) => Some(liquidity_pool),
 			None => {
 				let swap_asset_pair = AssetPairs::<T> {
 					asset_x: asset_pair.clone().asset_y,
@@ -570,7 +569,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 					return Some(liquidity_pool)
 				}
 
-				return None
+				None
 			},
 		}
 	}
@@ -582,7 +581,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 		let storage_key = (account_id.clone(), asset_pair.clone());
 		let existing_account_liquidity_pools = AccountLiquidityPoolStorage::<T>::get(storage_key);
 		match existing_account_liquidity_pools {
-			Some(account_liquidity_pools) => return Some(account_liquidity_pools),
+			Some(account_liquidity_pools) => Some(account_liquidity_pools),
 			None => {
 				let swap_asset_pair = AssetPairs::<T> {
 					asset_x: asset_pair.clone().asset_y,
@@ -597,7 +596,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 					return Some(account_liquidity_pool)
 				}
 
-				return None
+				None
 			},
 		}
 	}
@@ -621,7 +620,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 		asset_x_balance: Self::AssetBalance,
 		asset_y_balance: Self::AssetBalance,
 	) -> Result<(AssetIdOf<T>, AssetBalanceOf<T>), DispatchError> {
-		let mut lp_token: AssetIdOf<T> = 1u32.into();
+		let mut lp_token: AssetIdOf<T> = 1u32;
 		let humidefi_account_id = Self::get_dex_account();
 
 		let existing_liquidity_pool = Self::get_liquidity_pool(asset_pair.clone());
@@ -631,23 +630,19 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 				lp_token = liquidity_pool.lp_token;
 			},
 			None => {
-				let mut counter = 1u32.into();
-
 				loop {
-					lp_token = counter;
-
 					if !<T::Fungibles as fungibles::Inspect<_>>::asset_exists(lp_token) {
 						<T::Fungibles as fungibles::Create<_>>::create(
 							lp_token,
 							humidefi_account_id.clone(),
 							true,
-							1u128.into(),
+							1u128,
 						)?;
 
 						break;
 					}
 
-					counter += 1;
+					lp_token += 1;
 				}
 			},
 		}
@@ -687,13 +682,13 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 		id: Self::AccountLiquidityPoolId,
 	) -> Result<(AssetBalanceOf<T>, AssetBalanceOf<T>, AssetBalanceOf<T>), DispatchError> {
 		let existing_account_liquidity_pools = Self::get_account_liquidity_pools(account_id.clone(), asset_pair.clone());
-		if !existing_account_liquidity_pools.is_some() {
+		if existing_account_liquidity_pools.is_none() {
 			return Err(Error::<T>::AccountLiquidityPoolDoesNotExists.into())
 		}
 
 		let mut lp_token_balance = FixedU128::from_inner(0);
 		if let Some(account_liquidity_pools) = existing_account_liquidity_pools {
-			if account_liquidity_pools.to_vec().len() > 0 {
+			if !account_liquidity_pools.to_vec().is_empty() {
 				for account_liquidity_pool in account_liquidity_pools {
 					if account_liquidity_pool.lp_token == lp_token && account_liquidity_pool.id == id {
 						lp_token_balance = account_liquidity_pool.lp_token_balance;

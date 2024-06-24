@@ -220,8 +220,8 @@ pub fn xode_mainnet_config() -> ChainSpec {
 		},
 		// Bootnodes
 		vec![
-			MultiaddrWithPeerId::from_str("/dns4/bootnodeA01.xode.net/tcp/30343/p2p/12D3KooWCMKos1ijGQPbPVSiNWyhu1BCzLsPQKZyLAvXaNzGwi2Z").expect("bootnode not found".into()),
-			MultiaddrWithPeerId::from_str("/dns4/bootnodeA02.xode.net/tcp/30343/p2p/12D3KooWH3aD7xZJgqTgqVGAMwWnWm7RGfuinQfsGf4CDiTsV8No").expect("bootnode not found".into())
+			MultiaddrWithPeerId::from_str("/dns4/bootnodeA01.xode.net/tcp/30343/p2p/12D3KooWCMKos1ijGQPbPVSiNWyhu1BCzLsPQKZyLAvXaNzGwi2Z").expect("bootnode not found"),
+			MultiaddrWithPeerId::from_str("/dns4/bootnodeA02.xode.net/tcp/30343/p2p/12D3KooWH3aD7xZJgqTgqVGAMwWnWm7RGfuinQfsGf4CDiTsV8No").expect("bootnode not found")
 		],
 		// Telemetry
 		None,

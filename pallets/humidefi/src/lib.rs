@@ -1,5 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// Clippy lints
+#![allow(clippy::expect_fun_call)]
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -14,7 +17,7 @@ mod impls;
 pub mod pallet {
 	use super::*;
 	use frame_support::{
-		dispatch::DispatchResultWithPostInfo,
+		// dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 		sp_runtime::FixedU128,
 		traits::{fungible, fungibles},
