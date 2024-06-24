@@ -15,7 +15,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, Zero},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -32,7 +32,8 @@ use frame_support::{
 	traits::{
 		ConstBool, ConstU32, ConstU64, ConstU128, ConstU8,
 		EitherOfDiverse, Everything,
-		AsEnsureOriginWithArg, EqualPrivilegeOnly, Nothing
+		AsEnsureOriginWithArg, EqualPrivilegeOnly, Nothing,
+		Randomness
 	},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight, WeightToFeeCoefficient,
@@ -468,8 +469,6 @@ impl pallet_humidefi::Config for Runtime {
 	type Fungibles = Assets;
 }
 
-impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
-
 parameter_types! {
 	pub const DepositPerItem: Balance = deposit(1, 0);
 	pub const DepositPerByte: Balance = deposit(0, 1);
@@ -478,9 +477,16 @@ parameter_types! {
 	pub CodeHashLockupDepositPercent: Perbill = Perbill::from_percent(30);
 }
 
+pub struct DummyDeprecatedRandomness;
+impl Randomness<Hash, BlockNumber> for DummyDeprecatedRandomness {
+    fn random(_: &[u8]) -> (Hash, BlockNumber) {
+        (Default::default(), Zero::zero())
+    }
+}
+
 impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
-	type Randomness = RandomnessCollectiveFlip;
+	type Randomness = DummyDeprecatedRandomness;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -818,8 +824,7 @@ construct_runtime!(
 		Assets: pallet_assets = 50,
 
 		// Contracts
-		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip = 60,
-		Contracts: pallet_contracts = 61,
+		Contracts: pallet_contracts = 60,
 
 		// Local Pallets
 		HumidefiModule: pallet_humidefi = 70,
