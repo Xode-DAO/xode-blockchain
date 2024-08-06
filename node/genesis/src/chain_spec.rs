@@ -109,7 +109,7 @@ pub fn xode_dev_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
@@ -165,7 +165,7 @@ pub fn xode_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// get_account_id_from_seed::<sr25519::Public>("Alice"),
 				1000.into(),
 			)
 		},
@@ -214,7 +214,7 @@ pub fn xode_mainnet_config() -> ChainSpec {
 					),
 				],
 				Vec::new(),
-				AccountId32::from_ss58check("5Dqs2Bid5UuWefFQautKxX2jAYfAgrzAPbwTKU6u5z4MeDB2").expect("Invalid account ID"),
+				// AccountId32::from_ss58check("5Dqs2Bid5UuWefFQautKxX2jAYfAgrzAPbwTKU6u5z4MeDB2").expect("Invalid account ID"),
 				3344.into(),
 			)
 		},
@@ -242,7 +242,7 @@ pub fn xode_mainnet_config() -> ChainSpec {
 fn xode_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
-	root: AccountId,
+	// root: AccountId,
 	id: ParaId,
 ) -> humidefi_runtime::RuntimeGenesisConfig {
 	let num_endowed_accounts = endowed_accounts.len();
