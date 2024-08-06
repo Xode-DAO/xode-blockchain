@@ -39,17 +39,23 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 	) -> Result<(), DispatchError> {
 		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			who.clone(),
-			asset_pair.clone().asset_x,
-			asset_x_balance,
-		).expect(Error::<T>::CheckAssetXBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				who.clone(),
+				asset_pair.clone().asset_x,
+				asset_x_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetXBalanceError
+		);
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			who.clone(),
-			asset_pair.clone().asset_y,
-			asset_x_balance,
-		).expect(Error::<T>::CheckAssetYBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				who.clone(),
+				asset_pair.clone().asset_y,
+				asset_x_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetYBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_x,
@@ -67,20 +73,25 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 			frame_support::traits::tokens::Preservation::Expendable,
 		)?;
 
-		let mint_liquidity = <Pallet<T> as HumidefiHelpers>::compute_and_mint_lp_token(
+		let mint_liquidity_result = <Pallet<T> as HumidefiHelpers>::compute_and_mint_lp_token(
 			asset_pair.clone(),
 			asset_x_balance,
 			asset_y_balance,
-		).expect(Error::<T>::ComputeAndMintLiquidityPoolTokenError.into());
+		);
 
-		let lp_token: Self::AssetId = mint_liquidity.0;
-		let lp_token_balance = mint_liquidity.1;
+		let (lp_token, lp_token_balance) = match mint_liquidity_result {
+			Ok(mint_liquidity) => mint_liquidity,
+			Err(_) => return Err(Error::<T>::ComputeAndMintLiquidityPoolTokenError.into()),
+		};
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			humidefi_account_id.clone(),
-			lp_token,
-			lp_token_balance,
-		).expect(Error::<T>::CheckAssetLiquidityPoolTokenBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				humidefi_account_id.clone(),
+				lp_token,
+				lp_token_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetYBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			lp_token,
@@ -101,10 +112,15 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 					.asset_y_balance
 					.add(FixedU128::from_inner(asset_y_balance));
 
-				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
+				let update_price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
-				).expect(Error::<T>::ComputePriceError.into());
+				);
+
+				let update_price = match update_price_result {
+					Ok(updated_price) => updated_price,
+					Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+				};
 
 				let update_lp_token_balance = liquidity_pool
 					.lp_token_balance
@@ -126,10 +142,15 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 				});
 			},
 			None => {
-				let new_price = <Pallet<T> as HumidefiHelpers>::compute_price(
+				let new_price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 					asset_x_balance,
 					asset_y_balance
-				).expect(Error::<T>::ComputePriceError.into());
+				);
+
+				let new_price = match new_price_result {
+					Ok(price) => price,
+					Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+				};
 
 				let liquidity_pool_payload = LiquidityPool::<T> {
 					asset_pair: asset_pair.clone(),
@@ -164,17 +185,21 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 					last_id = account_liquidity_pool.id;
 				}
 
-				account_liquidity_pool_payload.id = last_id
-					.ensure_add(1)
-					.expect(Error::<T>::AccountLiquidityPoolIdError.into());
+				let new_id_result = last_id.ensure_add(1);
+				let new_id = match new_id_result {
+					Ok(id) => id,
+					Err(_) => return Err(Error::<T>::AccountLiquidityPoolIdError.into()),
+				};
+
+				account_liquidity_pool_payload.id = new_id;
 
 				let mut mutate_account_liquidity_pools = account_liquidity_pools.clone();
 				mutate_account_liquidity_pools
 					.try_push(account_liquidity_pool_payload.clone())
-					.expect(Error::<T>::AccountLiquidityPoolBoundedVecError.into());
+					.map_err(|_| Error::<T>::AccountLiquidityPoolBoundedVecError)?;
 
 				let storage_key = (who.clone(), asset_pair.clone());
-				AccountLiquidityPoolStorage::<T>::mutate(storage_key, |query| {
+				AccountLiquidityPoolStorage::<T>::mutate(storage_key, |mut query| {
 					let update_account_liquidity_pools = mutate_account_liquidity_pools.clone();
 					*query = Some(update_account_liquidity_pools)
 				});
@@ -187,7 +212,7 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 
 				new_account_liquidity_pools
 					.try_push(account_liquidity_pool_payload.clone())
-					.expect(Error::<T>::AccountLiquidityPoolBoundedVecError.into());
+					.map_err(|_| Error::<T>::AccountLiquidityPoolBoundedVecError)?;
 
 				AccountLiquidityPoolStorage::<T>::insert(
 					(who, asset_pair),
@@ -210,30 +235,37 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 			return Err(Error::<T>::LiquidityPoolDoesNotExists.into())
 		}
 
-		let asset_xy_balances = <Pallet<T> as HumidefiHelpers>::compute_xy_assets(
+		let asset_xy_balances_result = <Pallet<T> as HumidefiHelpers>::compute_xy_assets(
 			who.clone(),
 			asset_pair.clone(),
 			lp_token,
 			id
-		).expect(Error::<T>::ComputeXYBalancesError.into());
+		);
 
-		let asset_x_balance = asset_xy_balances.0;
-		let asset_y_balance = asset_xy_balances.1;
-		let lp_token_balance = asset_xy_balances.2;
+		let (asset_x_balance, asset_y_balance, lp_token_balance) = match asset_xy_balances_result {
+			Ok(asset_xy_balances) => asset_xy_balances,
+			Err(_) => return Err(Error::<T>::ComputeXYBalancesError.into()),
+		};
 
 		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			humidefi_account_id.clone(),
-			asset_pair.clone().asset_x,
-			asset_x_balance,
-		).expect(Error::<T>::CheckAssetXBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				humidefi_account_id.clone(),
+				asset_pair.clone().asset_x,
+				asset_x_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetXBalanceError
+		);
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			humidefi_account_id.clone(),
-			asset_pair.clone().asset_x,
-			asset_y_balance,
-		).expect(Error::<T>::CheckAssetYBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				humidefi_account_id.clone(),
+				asset_pair.clone().asset_x,
+				asset_y_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetYBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_pair.clone().asset_x,
@@ -261,10 +293,17 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 					.asset_y_balance
 					.sub(FixedU128::from_inner(asset_y_balance));
 
-				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
+				let update_price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
-				).expect(Error::<T>::ComputePriceError.into());
+				);
+
+				let update_price = match update_price_result {
+					Ok(price) => price,
+					Err(_) => {
+						return;
+					}
+				};
 
 				let update_lp_token_balance = mutate_liquidity_pool
 					.lp_token_balance
@@ -298,11 +337,14 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 	) -> Result<(), DispatchError> {
 		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			who.clone(),
-			asset_exact_in,
-			asset_exact_in_balance,
-		).expect(Error::<T>::CheckAssetSwapInBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				who.clone(),
+				asset_exact_in,
+				asset_exact_in_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetSwapInBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_exact_in,
@@ -319,26 +361,39 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 				let mut price = FixedU128::from_inner(0);
 
 				if asset_exact_in == liquidity_pool.asset_pair.asset_x {
-					price = <Pallet<T> as HumidefiHelpers>::compute_price(
+					let price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_x_balance.into_inner(),
 						liquidity_pool.asset_y_balance.into_inner()
-					).expect(Error::<T>::ComputePriceError.into());
+					);
+
+					price = match price_result {
+						Ok(data) => data,
+						Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+					};
 				}
 
 				if asset_exact_in == liquidity_pool.asset_pair.asset_y {
-					price = <Pallet<T> as HumidefiHelpers>::compute_price(
+					let price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_y_balance.into_inner(),
 						liquidity_pool.asset_x_balance.into_inner()
-					).expect(Error::<T>::ComputePriceError.into());
+					);
+
+					price = match price_result {
+						Ok(data) => data,
+						Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+					};
 				}
 
 				let asset_max_out_balance = FixedU128::from_inner(price.into_inner()).mul(FixedU128::from_inner(asset_exact_in_balance));
 
-				<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-					humidefi_account_id.clone(),
-					asset_max_out,
-					asset_max_out_balance.into_inner(),
-				).expect(Error::<T>::CheckAssetSwapOutBalanceError.into());
+				ensure!(
+					<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+						humidefi_account_id.clone(),
+						asset_max_out,
+						asset_max_out_balance.into_inner(),
+					).is_ok(),
+					Error::<T>::CheckAssetSwapOutBalanceError
+				);
 
 				<T::Fungibles as fungibles::Mutate<_>>::transfer(
 					asset_max_out,
@@ -371,10 +426,15 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 						.add(FixedU128::from_inner(asset_exact_in_balance));
 				}
 
-				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
+				let update_price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
-				).expect(Error::<T>::ComputePriceError.into());
+				);
+
+				let update_price = match update_price_result {
+					Ok(price) => price,
+					Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+				};
 
 				LiquidityPoolStorage::<T>::mutate(asset_pair.clone(), |query| {
 					let liquidity_pool_payload = LiquidityPool::<T> {
@@ -407,11 +467,14 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 	) -> Result<(), DispatchError> {
 		let humidefi_account_id = <Pallet<T> as HumidefiHelpers>::get_dex_account();
 
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			humidefi_account_id.clone(),
-			asset_exact_out,
-			asset_exact_out_balance,
-		).expect(Error::<T>::CheckAssetSwapOutBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				humidefi_account_id.clone(),
+				asset_exact_out,
+				asset_exact_out_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetSwapOutBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset_exact_out,
@@ -428,26 +491,39 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 				let mut price = FixedU128::from_inner(0);
 
 				if asset_min_in == liquidity_pool.asset_pair.asset_x {
-					price = <Pallet<T> as HumidefiHelpers>::compute_price(
+					let price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_x_balance.into_inner(),
 						liquidity_pool.asset_y_balance.into_inner()
-					).expect(Error::<T>::ComputePriceError.into());
+					);
+
+					price = match price_result {
+						Ok(data) => data,
+						Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+					};
 				}
 
 				if asset_min_in == liquidity_pool.asset_pair.asset_y {
-					price = <Pallet<T> as HumidefiHelpers>::compute_price(
+					let price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 						liquidity_pool.asset_y_balance.into_inner(),
 						liquidity_pool.asset_x_balance.into_inner()
-					).expect(Error::<T>::ComputePriceError.into());
+					);
+
+					price = match price_result {
+						Ok(data) => data,
+						Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+					};
 				}
 
 				let asset_min_in_balance = FixedU128::from_inner(price.into_inner()).mul(FixedU128::from_inner(asset_exact_out_balance));
 
-				<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-					who.clone(),
-					asset_min_in,
-					asset_min_in_balance.into_inner(),
-				).expect(Error::<T>::CheckAssetSwapInBalanceError.into());
+				ensure!(
+					<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+						who.clone(),
+						asset_min_in,
+						asset_min_in_balance.into_inner(),
+					).is_ok(),
+					Error::<T>::CheckAssetSwapInBalanceError
+				);
 
 				<T::Fungibles as fungibles::Mutate<_>>::transfer(
 					asset_min_in,
@@ -480,10 +556,15 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 						.add(asset_min_in_balance);
 				}
 
-				let update_price = <Pallet<T> as HumidefiHelpers>::compute_price(
+				let update_price_result = <Pallet<T> as HumidefiHelpers>::compute_price(
 					update_asset_x_balance.into_inner(),
 					update_asset_y_balance.into_inner()
-				).expect(Error::<T>::ComputePriceError.into());
+				);
+
+				let update_price = match update_price_result {
+					Ok(price) => price,
+					Err(_) => return Err(Error::<T>::ComputePriceError.into()),
+				};
 
 				LiquidityPoolStorage::<T>::mutate(asset_pair.clone(), |query| {
 					let liquidity_pool_payload = LiquidityPool::<T> {
@@ -514,11 +595,14 @@ impl<T: Config> HumidefiCaller for Pallet<T> {
 		asset_balance: Self::AssetBalance,
 		account_id: Self::AccountId,
 	) -> Result<(), DispatchError> {
-		<Pallet<T> as HumidefiHelpers>::check_asset_balance(
-			who.clone(),
-			asset,
-			asset_balance,
-		).expect(Error::<T>::CheckAssetSwapInBalanceError.into());
+		ensure!(
+			<Pallet<T> as HumidefiHelpers>::check_asset_balance(
+				who.clone(),
+				asset,
+				asset_balance,
+			).is_ok(),
+			Error::<T>::CheckAssetBalanceError
+		);
 
 		<T::Fungibles as fungibles::Mutate<_>>::transfer(
 			asset,
@@ -540,6 +624,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 	type AssetPairs = <AssetPairs<T> as AssetPairsTrait>::AssetPairs;
 	type LiquidityPool = <LiquidityPool<T> as LiquidityPoolTrait>::LiquidityPool;
 	type AccountLiquidityPool = <AccountLiquidityPool<T> as AccountLiquidityPoolTrait>::AccountLiquidityPool;
+	type AssetBalanceResult = Result<(Self::AssetBalance, Self::AssetBalance, Self::AssetBalance), DispatchError>;
 
 	fn get_dex_account() -> Self::AccountId {
 		HUMIDEFI.into_account_truncating()
@@ -610,7 +695,7 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 
 		current_asset_balance
 			.ensure_sub(asset_balance)
-			.expect(Error::<T>::AssetDoesNotHaveEnoughBalance.into());
+			.map_err(|_| Error::<T>::AssetDoesNotHaveEnoughBalance)?;
 
 		Ok(())
 	}
@@ -712,6 +797,11 @@ impl<T: Config> HumidefiHelpers for Pallet<T> {
 		let get_asset_y_balance = lp_token_balance.mul(FixedU128::from_inner(price.into_inner()).sqrt());
 		let get_lp_token_balance = lp_token_balance;
 
-		Ok((get_asset_x_balance.into_inner(), get_asset_y_balance.into_inner(), get_lp_token_balance.into_inner()))
+		Ok((
+			get_asset_x_balance.into_inner(),
+			get_asset_y_balance.into_inner(),
+			get_lp_token_balance.into_inner()
+		))
+		// Ok((get_asset_x_balance.into_inner(), get_asset_y_balance.into_inner(), get_lp_token_balance.into_inner()))
 	}
 }

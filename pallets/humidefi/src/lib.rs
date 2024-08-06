@@ -1,8 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// Clippy lints
-#![allow(clippy::expect_fun_call)]
-
 pub use pallet::*;
 
 #[cfg(test)]
@@ -120,6 +117,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		CheckAssetBalanceError,
 		CheckAssetXBalanceError,
 		CheckAssetYBalanceError,
 		CheckAssetLiquidityPoolTokenBalanceError,

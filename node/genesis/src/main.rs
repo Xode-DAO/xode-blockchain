@@ -2,11 +2,10 @@
 
 #![warn(missing_docs)]
 
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-
-// Clippy lints
-#![allow(clippy::expect_fun_call)]
+// Clippy
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
+// #![allow(clippy::expect_fun_call)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::needless_return)]
 #![allow(clippy::type_complexity)]

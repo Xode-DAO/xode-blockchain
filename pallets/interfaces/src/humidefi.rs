@@ -62,6 +62,7 @@ pub trait HumidefiHelpers {
 	type AssetPairs: AssetPairsTrait;
 	type LiquidityPool: LiquidityPoolTrait;
 	type AccountLiquidityPool: AccountLiquidityPoolTrait;
+	type AssetBalanceResult;
 
 	fn get_dex_account() -> Self::AccountId;
 
@@ -101,5 +102,5 @@ pub trait HumidefiHelpers {
 		asset_pair: Self::AssetPairs,
 		lp_token: Self::AssetId,
 		id: Self::AccountLiquidityPoolId
-	) -> Result<(Self::AssetBalance, Self::AssetBalance, Self::AssetBalance), DispatchError>;
+	) -> Self::AssetBalanceResult;
 }
