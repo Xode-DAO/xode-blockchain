@@ -3,7 +3,9 @@
 
 ## Setting up a Xode Node in AWS
 ### Downloading the xode-node binary
+```
 $ curl -L "https://drive.usercontent.google.com/download?id=10zStcLL08V3hiCy507CBXMCKCb2VFQsM=xxx" -o raw-xode-node-chainspec.json
+```
 ### Download the xode chainspec
 $ wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=19C8s1MdVubYjMFiLBmvwhWxTK6bPeyve' -O raw-xode-node-chainspec.json
 ### Make the xode-node binary executable
