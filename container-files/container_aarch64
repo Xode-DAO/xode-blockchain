@@ -1,0 +1,24 @@
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y curl && apt-get install -y wget
+
+RUN curl -L "https://drive.usercontent.google.com/download?id=1S8uBEuaZhSfJMCwKvbzWXAw_7J4EgPVE&confirm=xxx" -o xode-node
+
+RUN wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=19C8s1MdVubYjMFiLBmvwhWxTK6bPeyve' -O raw-xode-node-chainspec.json
+
+RUN chmod +x xode-node
+
+RUN touch xode-node.sh
+
+RUN echo "#!/bin/bash" >> xode-node.sh
+RUN echo "/xode-node \\" >> xode-node.sh
+RUN echo "--chain /raw-xode-node-chainspec.json \\" >> xode-node.sh
+RUN echo "--base-path /xode \\" >> xode-node.sh
+RUN echo "--rpc-port 9944 \\" >> xode-node.sh
+RUN echo "--pruning archive \\" >> xode-node.sh
+RUN echo "--telemetry-url \"wss://telemetry.polkadot.io/submit/ 0\" \\" >> xode-node.sh
+RUN echo "--name \"\$1\"" >> xode-node.sh
+
+RUN chmod +x xode-node.sh
+
+ENTRYPOINT ["sh", "./xode-node.sh"]
