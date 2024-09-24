@@ -1,5 +1,5 @@
 # Use the latest Ubuntu image
-FROM ubuntu:latest
+FROM --platform=linux/arm64 ubuntu:22.04
 
 # Install necessary packages
 RUN apt-get update
