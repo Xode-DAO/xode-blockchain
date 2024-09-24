@@ -12,12 +12,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build Docker image
-      
-        run: docker buildx build \
-            --platform linux/arm64 \
-            --tag ${{ secrets.DOCKER_USERNAME }}/xode-node-rpi-ubuntu:latest \
-            --push .
-        # docker build -t ${{ secrets.DOCKER_HUB_NAMESPACE }}/xode-node-rpi-ubuntu:latest .
+        run: docker build -t ${{ secrets.DOCKER_HUB_NAMESPACE }}/xode-node-ubuntu:latest .
+        
       - name: Push image to DockerHub
         run: |
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
