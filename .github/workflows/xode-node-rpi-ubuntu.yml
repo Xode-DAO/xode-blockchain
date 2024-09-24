@@ -3,7 +3,7 @@ name: production_deployment
 on:
   push:
     tags:
-      - v**-production
+      - v**-rpi-production
 
 jobs:
   build_and_deploy:
@@ -12,7 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_HUB_NAMESPACE }}/xode-node-ubuntu:latest .
+      
+        run: docker buildx build \
+            --platform linux/arm64 \
+            --tag ${{ secrets.DOCKER_USERNAME }}/xode-node-rpi-ubuntu:latest \
+            --push .
+        # docker build -t ${{ secrets.DOCKER_HUB_NAMESPACE }}/xode-node-rpi-ubuntu:latest .
       - name: Push image to DockerHub
         run: |
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
