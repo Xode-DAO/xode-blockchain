@@ -5,7 +5,7 @@ NODENAME=${NODENAME:-xode-node-name}  # Default to 'xode-node-name' if no input 
 
 # STEP 1: Download the xode-node binary
 echo "$NODENAME : downloading xode-node binary..."
-curl -L "https://drive.usercontent.google.com/download?id=10zStcLL08V3hiCy507CBXMCKCb2VFQsM&confirm=xxx" -o /home/ubuntu/xode-node
+curl -L "https://drive.usercontent.google.com/download?id=1S8uBEuaZhSfJMCwKvbzWXAw_7J4EgPVE&confirm=xxx" -o xode-node
 
 # STEP 2: Download the xode chainspec
 echo "$NODENAME : downloading chainspec..."
