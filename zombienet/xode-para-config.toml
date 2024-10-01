@@ -29,5 +29,5 @@ cumulus_based = true
 
   [[parachains.collators]]
   name = "xode-collator"
-  command = "../target/release/xode-node"
+  command = "./bin/xode-node"
   args = [ "-l=xcm=trace" ]

@@ -2,7 +2,7 @@
 name = "humidefi-runtime"
 version = "0.1.0"
 authors = ["Anonymous"]
-description = "Humidefi Parachain Runtime."
+description = "Humidefi Parachain Runtime"
 license = "Unlicense"
 homepage = "https://substrate.io"
 repository = "https://github.com/paritytech/cumulus/"
